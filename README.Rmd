@@ -1,19 +1,79 @@
 ---
-output: github_document
+title: Optimization for Shannon diversity in AMPL
+author: "Derek Corcoran"
+date: "`r format(Sys.time(), '%d/%m, %Y')`"
+output:
+  bookdown::github_document2:
+    fig_caption: true
+    toc: true
+bibliography: biblio.bib
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  echo = T,
+  warning = F,
+  message = F,
+  error = F,
+  tidy = T,
+  cache = F,
+  eval = F
+)
+knitr::read_chunk('ReusableCode.R')
+knitr::knit_hooks$set(
+  source = function(x, options) {
+    hook.r = function(x, options) {
+      fence <- "```"
+      language = tolower(options$engine)
+      if (language == 'node') language = 'javascript'
+      if (!options$highlight) language = 'text'
+      if(!is.null(options$foldcode)) {
+      paste0('\n\n', "<details><summary>Show code</summary>\n", fence, language, '\n', x, fence,  '\n\n', "</details>\n")
+      } else {
+              paste0('\n\n', fence, language, '\n', x, fence,  '\n\n')
+      }
+    }
+    x = knitr:::hilight_source(x, 'markdown', options)
+    hook.r(
+      paste(c(
+        x, 
+        ''
+      ), collapse = '\n'), 
+      options
+    )
+  }
 )
 ```
-
-# ShannonOptimizationAMPL
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of ShannonOptimizationAMPL is to explain and prepare models for the optimization of geographical areas 
+The goal of this repository is to explain and prepare models for the optimization of geographical areas in order to maximize diversity (Shannon or other indexes) using AMPL.
+
+# Introduction
+
+Fore every cell $V_i$ in a spatial raster there are $L$ different possible landuses.  
+
+\begin{equation*}
+\begin{aligned}
+& \underset{x}{\text{maximize}}
+& & H=-\sum_{i=1}^{SP} P_i\,log_2\,P_i \\
+& \text{subject to}
+& & f_i(x) \leq b_i, \; i = 1, \ldots, SP.
+\end{aligned}
+\end{equation*}
+
+```{r TestCode, foldcode=TRUE}
+
+```
+
+# Final AMPL model
+
+```{r AMPLModel, echo = T, eval=FALSE}
+
+```
+
