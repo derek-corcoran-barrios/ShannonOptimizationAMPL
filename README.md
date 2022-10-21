@@ -1,10 +1,12 @@
 Optimization for Shannon diversity in AMPL
 ================
 Derek Corcoran
-17/10, 2022
+21/10, 2022
 
--   [1 Introduction](#1-introduction)
--   [2 Final AMPL model](#2-final-ampl-model)
+-   [1 Models](#1-models)
+    -   [1.1 Model 1 ideal world](#11-model-1-ideal-world)
+    -   [1.2 Model 2 add “Cost” of
+        transition](#12-model-2-add-cost-of-transition)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
@@ -14,49 +16,79 @@ The goal of this repository is to explain and prepare models for the
 optimization of geographical areas in order to maximize diversity
 (Shannon or other indexes) using AMPL.
 
-# 1 Introduction
+# 1 Models
 
-Fore every cell $V_i$ in a spatial raster there are $L$ different
-possible landuses.
+## 1.1 Model 1 ideal world
+
+In this model we try to decipher the ideal landuse configuration of
+Denmark taking only into account landuse suitability and diversity, we
+just want to maximize Shannon’s diversity and descide on the best
+composition of landuse for denmark given that.
+
+``` r
+set Cells;   # vertex set of the spatial graph
+set Species; #Set of Species
+param Landuses; # Landuse types
+param LanduseSuitability {Cells,Landuses}; #If cell is suitable or not in each cell
+param SpeciesSuitability {Species, Cells,Landuses}; # node presence absence pred for species SP, in landuse in time L
+param Cost {Cells}; # node cost (all 1) this is for calculating the budget
+var LanduseDecision {c in Cells,l in Landuses} binary; #else >= 0  decision on which landuse to use for cell Cell
+
+minimize InvShanonDiv: sum{s in Species, c in Cells, l in Landuses} LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]*log(LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]);
+
+subj to PropotionalUse{c in Cells}:
+  sum{l in Landuses} LanduseDecision[c,l] = 1;
+```
+
+The only constrain we have here is the landuse composition of Denmark to
+maximize the diversity as defined by an index, in this example, it is
+Shannon’s diversity index, but this can be easily be changed.
+
+We can make some smart and easy “Constraints” such as not making
+possible to change the landuse from city to another use.
+
+The mathematical equations for this would be
 
 $$\begin{equation*}
 \begin{aligned}
-& \underset{x}{\text{maximize}}
-& & H=-\sum_{i=1}^{SP} P_i\,log_2\,P_i \\
-& \text{subject to}
-& & f_i(x) \leq b_i, \; i = 1, \ldots, SP.
+& \underset{x}{\text{minimize}}
+& & -H=\sum_{s=1}^{Species}\sum_{c=1}^{Cells}\sum_{l=1}^{Landuses} LanduseDecision_{v,l}\times LanduseSuitability{c,l}\times SpeciesSuitability{s,v,l} log_2\,(LanduseDecision_{v,l}\times LanduseSuitability{c,l}\times SpeciesSuitability{s,v,l}) \\
+& \text{subject to Propotional Use}
+& &
+  \sum_{1=l}^{Landuses} LanduseDecision_l = 1
 \end{aligned}
 \end{equation*}$$
 
-<details>
-<summary>
+## 1.2 Model 2 add “Cost” of transition
 
-Show code
-
-</summary>
-
-``` r
-mtcars %>%
-    ggplot(aes(x = hp, y = mpg)) + geom_point()
-```
-
-</details>
-
-# 2 Final AMPL model
+One of the main issues with model 1 is that this assumes that we could
+change all the cells in Denmark, this could be easily changed by adding
+a parameter called transition cost, which could be set to 0 if the
+landuse stays the same and 1 if it changes for sake of simplicity, but
+more information could be add to it by using actual transition costs or
+even mantainance costs. That model looks as follows
 
 ``` r
-set V;   # vertex set of the spatial graph
-set SP; #Set of Species
-param L; # Landuse types
-param budget >= 0;
-param u {SP, V,1..L} ; # node presence absence pred for species SP, in landuse in time L
-param c {V,1..L} ; # node carbon content, in landuse in time L
-param m {V}; # node cost (all 1) this is for calculating the budget
-var y {v in V,l in 1..L} >= 0; # Desition on which landuse to use for node V
-var z {v in V} >= 0; # Desition to preserve or not node
-
-maximize ShanonDiv: sum {s in SP, v in V, l in 0..L} m[v]*y[s,v,l]*c[v,l];
-
-subj to MaxBudget {v in V, l in 1..L}:
-  budget <= sum {(v) in V} m[v]*z[v];
+set Cells;   # vertex set of the spatial graph
+set Species; #Set of Species
+param Landuses; # Landuse types
+param LanduseSuitability {Cells,Landuses}; #If cell is suitable or not in each cell
+param TransitionCost {Cells,Landuses}; #Cost of changing the cell landuse, set to 0 
+                                      #if it stays the same, 1 if it is a change or infitinte if we want to set landuse
+param MaxTransitionCost >= 0;
+param SpeciesSuitability {Species, Cells,Landuses}; # node presence absence pred for species SP, in landuse in time L
+param Cost {Cells}; # node cost (all 1) this is for calculating the budget
+var LanduseDecision {c in Cells,l in Landuses} binary; #else >= 0  decision on which landuse to use for cell Cell
+  
+minimize InvShanonDiv: sum{s in Species, c in Cells, l in Landuses} LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]*log(LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]);
+  
+subj to PropotionalUse{c in Cells}:
+  sum{l in Landuses} LanduseDecision[c,l] = 1;
+  
+subj to MaxTransition:
+  sum{l in Landuses, c in Cells} LanduseDecision[c,l]*TransitionCost[c,l] <= MaxTransitionCost;
 ```
+
+We also add a maximum transition cost, which is the maximum number of
+cells that can change their landuse, this could be set to the number of
+cells that are 10% of Denmark for example

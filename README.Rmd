@@ -54,26 +54,38 @@ knitr::knit_hooks$set(
 
 The goal of this repository is to explain and prepare models for the optimization of geographical areas in order to maximize diversity (Shannon or other indexes) using AMPL.
 
-# Introduction
+# Models
 
-Fore every cell $V_i$ in a spatial raster there are $L$ different possible landuses.  
+## Model 1 ideal world
+
+In this model we try to decipher the ideal landuse configuration of Denmark taking only into account landuse suitability and diversity, we just want to maximize Shannon's diversity and descide on the best composition of landuse for denmark given that.
+
+```{r AMPLModel1IdealWorld, echo = T, eval=FALSE}
+
+```
+
+The only constrain we have here is the landuse composition of Denmark to maximize the diversity as defined by an index, in this example, it is Shannon's diversity index, but this can be easily be changed.
+
+We can make some smart and easy "Constraints" such as not making possible to change the landuse from city to another use.
+
+The mathematical equations for this would be
 
 \begin{equation*}
 \begin{aligned}
-& \underset{x}{\text{maximize}}
-& & H=-\sum_{i=1}^{SP} P_i\,log_2\,P_i \\
-& \text{subject to}
-& & f_i(x) \leq b_i, \; i = 1, \ldots, SP.
+& \underset{x}{\text{minimize}}
+& & -H=\sum_{s=1}^{Species}\sum_{c=1}^{Cells}\sum_{l=1}^{Landuses} LanduseDecision_{v,l}\times LanduseSuitability{c,l}\times SpeciesSuitability{s,v,l} log_2\,(LanduseDecision_{v,l}\times LanduseSuitability{c,l}\times SpeciesSuitability{s,v,l}) \\
+& \text{subject to Propotional Use}
+& &
+  \sum_{1=l}^{Landuses} LanduseDecision_l = 1
 \end{aligned}
 \end{equation*}
 
-```{r TestCode, foldcode=TRUE}
+## Model 2 add "Cost" of transition
+
+One of the main issues with model 1 is that this assumes that we could change all the cells in Denmark, this could be easily changed by adding a parameter called transition cost, which could be set to 0 if the landuse stays the same and 1 if it changes for sake of simplicity, but more information could be add to it by using actual transition costs or even mantainance costs. That model looks as follows
+
+```{r AMPLModel2TransitionConstrained, echo = T, eval=FALSE}
 
 ```
 
-# Final AMPL model
-
-```{r AMPLModel, echo = T, eval=FALSE}
-
-```
-
+We also add a maximum transition cost, which is the maximum number of cells that can change their landuse, this could be set to the number of cells that are 10% of Denmark for example

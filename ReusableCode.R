@@ -15,22 +15,62 @@ mtcars %>%
   ggplot(aes(x = hp, y = mpg)) +
   geom_point()
 
+## ---- AMPLModel1IdealWorld --------
+
+set Cells;   # vertex set of the spatial graph
+set Species; #Set of Species
+param Landuses; # Landuse types
+param LanduseSuitability {Cells,Landuses}; #If cell is suitable or not in each cell
+param SpeciesSuitability {Species, Cells,Landuses}; # node presence absence pred for species SP, in landuse in time L
+param Cost {Cells}; # node cost (all 1) this is for calculating the budget
+var LanduseDecision {c in Cells,l in Landuses} binary; #else >= 0  decision on which landuse to use for cell Cell
+
+minimize InvShanonDiv: sum{s in Species, c in Cells, l in Landuses} LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]*log(LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]);
+
+subj to PropotionalUse{c in Cells}:
+  sum{l in Landuses} LanduseDecision[c,l] = 1;
+## ---- AMPLModel2TransitionConstrained --------  
+  
+set Cells;   # vertex set of the spatial graph
+set Species; #Set of Species
+param Landuses; # Landuse types
+param LanduseSuitability {Cells,Landuses}; #If cell is suitable or not in each cell
+param TransitionCost {Cells,Landuses}; #Cost of changing the cell landuse, set to 0 
+                                      #if it stays the same, 1 if it is a change or infitinte if we want to set landuse
+param MaxTransitionCost >= 0;
+param SpeciesSuitability {Species, Cells,Landuses}; # node presence absence pred for species SP, in landuse in time L
+param Cost {Cells}; # node cost (all 1) this is for calculating the budget
+var LanduseDecision {c in Cells,l in Landuses} binary; #else >= 0  decision on which landuse to use for cell Cell
+  
+minimize InvShanonDiv: sum{s in Species, c in Cells, l in Landuses} LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]*log(LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]);
+  
+subj to PropotionalUse{c in Cells}:
+  sum{l in Landuses} LanduseDecision[c,l] = 1;
+  
+subj to MaxTransition:
+  sum{l in Landuses, c in Cells} LanduseDecision[c,l]*TransitionCost[c,l] <= MaxTransitionCost;
+
+
 ## ---- AMPLModel --------
 
-set V;   # vertex set of the spatial graph
-set SP; #Set of Species
-param L; # Landuse types
+set Cells;   # vertex set of the spatial graph
+set Species; #Set of Species
+param Landuses; # Landuse types
 param budget >= 0;
-param u {SP, V,1..L} ; # node presence absence pred for species SP, in landuse in time L
-param c {V,1..L} ; # node carbon content, in landuse in time L
-param m {V}; # node cost (all 1) this is for calculating the budget
-var y {v in V,l in 1..L} >= 0; # Desition on which landuse to use for node V
-var z {v in V} >= 0; # Desition to preserve or not node
+param LanduseSuitability {Cells,Landuses}; #If cell is suitable or not in each cell
+param SpeciesSuitability {Species, Cells,Landuses}; # node presence absence pred for species SP, in landuse in time L
+param CarbonContent {Cells,Landuses} ; # node carbon content, in landuse in time L
+param Cost {Cells}; # node cost (all 1) this is for calculating the budget
+var LanduseDecision {c in Cells,l in Landuses} binary; #else >= 0  decision on which landuse to use for cell Cell
+var ConervationDecision {c in Cells} >= 0; # Desition to preserve or not node
 
-maximize ShanonDiv: sum {s in SP, v in V, l in 0..L} m[v]*y[s,v,l]*c[v,l];
+minimize InvShanonDiv: sum{s in Species, c in Cells, l in Landuses} LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]*log(LanduseDecision[c,l]*LanduseSuitability[v,l]*SpeciesSuitability[s,v,l]);
 
-subj to MaxBudget {v in V, l in 1..L}:
-  budget <= sum {(v) in V} m[v]*z[v];
+subj to MaxBudget {c in Cells, l in Landuses}:
+  budget <= sum {c in Cells} Cost[c]*ConervationDecision[c];
+
+subj to PropotionalUse{c in Cells}:
+  sum{l in Landuses} LanduseDecision[c,l] = 1;
 
 ## ---- AMPTemplate --------
 
