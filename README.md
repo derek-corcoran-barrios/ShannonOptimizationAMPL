@@ -1,12 +1,14 @@
 Optimization for Shannon diversity in AMPL
 ================
 Derek Corcoran
-21/10, 2022
+23/02, 2023
 
--   [1 Models](#1-models)
-    -   [1.1 Model 1 ideal world](#11-model-1-ideal-world)
-    -   [1.2 Model 2 add “Cost” of
-        transition](#12-model-2-add-cost-of-transition)
+- <a href="#1-models" id="toc-1-models">1 Models</a>
+  - <a href="#11-model-1-ideal-world" id="toc-11-model-1-ideal-world">1.1
+    Model 1 ideal world</a>
+  - <a href="#12-model-2-add-cost-of-transition"
+    id="toc-12-model-2-add-cost-of-transition">1.2 Model 2 add “Cost” of
+    transition</a>
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
